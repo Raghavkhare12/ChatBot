@@ -1,0 +1,14 @@
+[
+  {
+    "id": "deepseek/deepseek-r1:free",
+    "name": "DeepSeek (free)"
+  },
+  {
+    "id": "openai/gpt-4o",
+    "name": "OpenAI GPT-4o"
+  },
+  {
+    "id": "meta-llama/llama-3.1-8b-instruct",
+    "name": "Llama 3.1 (8B)"
+  }
+]
