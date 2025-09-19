@@ -15,7 +15,7 @@
     "capabilities": ["text", "image", "audio", "file"]
   },
   {
-    "id": "google/gemini-1.5-flash",
+    "id": "google/gemini-flash-1.5",
     "name": "Gemini 1.5 Flash (Multi-modal)",
     "capabilities": ["text", "image", "audio", "file"]
   },
