@@ -4,17 +4,19 @@ export default async function handler(req, res) {
   const { model, messages } = req.body || {};
   if (!model || !messages) return res.status(400).json({ error: 'model and messages required' });
 
-  let processedMessages = messages.map(msg => ({ role: msg.role, content: msg.content }));
+  // Use the messages directly, but create a deep copy to avoid mutation issues.
+  let processedMessages = JSON.parse(JSON.stringify(messages));
 
-  const lastMessage = messages[messages.length - 1];
+  const lastMessage = processedMessages[processedMessages.length - 1];
   const { content, file } = lastMessage;
 
+  // If a file exists, process it and restructure the last message.
   if (file && file.data && file.type) {
     const base64Data = file.data.split(',')[1];
     let updatedContent = [];
 
-    // Check if the file is an image
     if (file.type.startsWith('image/')) {
+      // Format for image files
       updatedContent = [
         { type: 'text', text: content },
         {
@@ -27,7 +29,7 @@ export default async function handler(req, res) {
         },
       ];
     } else {
-      // Handle text-based files (like code)
+      // Format for text-based files (like code)
       const decodedText = Buffer.from(base64Data, 'base64').toString('utf-8');
       const fileContentBlock = `
 --- Start of Uploaded File: ${file.name} ---
@@ -36,14 +38,12 @@ ${decodedText}
 
 --- End of Uploaded File ---
       `;
-      
-      // Prepend the file content to the user's text prompt
-      updatedContent = [
-        { type: 'text', text: `${content}\n\n${fileContentBlock}` }
-      ];
+      updatedContent = [{ type: 'text', text: `${content}\n\n${fileContentBlock}` }];
     }
-
-    processedMessages[processedMessages.length - 1].content = updatedContent;
+    
+    // Replace the content of the last message and remove the file object
+    lastMessage.content = updatedContent;
+    delete lastMessage.file;
   }
   
   try {
@@ -55,7 +55,8 @@ ${decodedText}
       },
       body: JSON.stringify({
         model,
-        messages: processedMessages
+        // Filter out any remaining file objects just in case, before sending.
+        messages: processedMessages.map(({ file, ...rest }) => rest)
       })
     });
 
