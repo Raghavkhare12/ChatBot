@@ -10,7 +10,7 @@
     "capabilities": ["text", "file"]
   },
   {
-    "id": "google/gemini-2.5-flash-image-previewee",
+    "id": "google/gemini-2.5-flash-image-preview",
     "name": "Gemini-2.5-Flash (Multi-modal)",
     "capabilities": ["text", "image", "audio", "file"]
   },
