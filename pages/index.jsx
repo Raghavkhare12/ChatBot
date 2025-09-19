@@ -167,7 +167,11 @@ export default function Home() {
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !loading) send(); }}
+              onKeyDown={e => { if (e.key === 'Enter' && !loading){ 
+                e.preventDefault(); // Add this line
+                send(); 
+              }
+              }}
               placeholder="Type a message..."
             />
             <button className="send-button" onClick={send} disabled={loading}>Send</button>
