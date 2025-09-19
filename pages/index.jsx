@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { FileIcon, ImageIcon, MicIcon, XIcon } from '../components/icons';
+import { FilePreview } from '../components/file-preview';
 
 function ChatBubble({ role, text }) {
   const isUser = role === 'user';
@@ -31,6 +33,11 @@ export default function Home() {
     } catch { return []; }
   });
   const [loading, setLoading] = useState(false);
+  const [attachedFile, setAttachedFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const currentModel = models.find(m => m.id === model);
+  const modelCapabilities = currentModel?.capabilities || ['text'];
 
   useEffect(() => {
     fetch('/api/models').then(r => r.json()).then(data => {
@@ -43,12 +50,35 @@ export default function Home() {
     localStorage.setItem('mm:messages', JSON.stringify(messages));
   }, [messages]);
 
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAttachedFile({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: reader.result,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   async function send() {
-    if (!input.trim()) return;
-    const userMsg = { role: 'user', content: input };
+    if (!input.trim() && !attachedFile) return;
+
+    const userMsg = {
+      role: 'user',
+      content: input,
+      ...(attachedFile && { file: attachedFile }),
+    };
+
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInput('');
+    setAttachedFile(null);
     setLoading(true);
 
     try {
@@ -79,6 +109,7 @@ export default function Home() {
 
   function clearChat() {
     setMessages([]);
+    setAttachedFile(null);
     localStorage.removeItem('mm:messages');
   }
 
@@ -86,7 +117,7 @@ export default function Home() {
     <div style={{ fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <header style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', gap: 12, alignItems: 'center' }}>
         <h2 style={{ margin: 0 }}>Multi-Model Chatbot</h2>
-        <select value={model} onChange={e => setModel(e.target.value)} style={{ marginLeft: 'auto' }}>
+        <select value={model} onChange={e => { setModel(e.target.value); setAttachedFile(null); }} style={{ marginLeft: 'auto' }}>
           {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
         <button onClick={clearChat} style={{ marginLeft: 8 }}>Clear</button>
@@ -100,17 +131,35 @@ export default function Home() {
         {loading && <div style={{ color: '#666' }}>Assistant is typing...</div>}
       </main>
 
-      <footer style={{ padding: 12, borderTop: '1px solid #eee', display: 'flex', gap: 8 }}>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') send(); }}
-          placeholder="Type a message and press Enter"
-          style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd' }}
-        />
-        <button onClick={send} disabled={loading} style={{ padding: '8px 12px', borderRadius: 8 }}>
-          Send
-        </button>
+      <footer style={{ padding: 12, borderTop: '1px solid #eee' }}>
+        {attachedFile && <FilePreview file={attachedFile} onClear={() => setAttachedFile(null)} />}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+          {modelCapabilities.includes('image') && (
+            <button onClick={() => { fileInputRef.current.accept = 'image/*'; fileInputRef.current.click(); }}><ImageIcon /></button>
+          )}
+          {modelCapabilities.includes('audio') && (
+            <button onClick={() => { fileInputRef.current.accept = 'audio/*'; fileInputRef.current.click(); }}><MicIcon /></button>
+          )}
+          {modelCapabilities.includes('file') && (
+            <button onClick={() => { fileInputRef.current.accept = '*/*'; fileInputRef.current.click(); }}><FileIcon /></button>
+          )}
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') send(); }}
+            placeholder="Type a message and press Enter"
+            style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd' }}
+          />
+          <button onClick={send} disabled={loading} style={{ padding: '8px 12px', borderRadius: 8 }}>
+            Send
+          </button>
+        </div>
       </footer>
     </div>
   );
