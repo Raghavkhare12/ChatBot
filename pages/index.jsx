@@ -63,26 +63,42 @@ export default function Home() {
   };
 
   async function send() {
+    // 1. Return early if there's nothing to send.
     if (!input.trim() && !attachedFile) return;
 
+    // 2. Create the user message with the file data.
     const userMsg = {
       role: 'user',
       content: input,
       ...(attachedFile && { file: attachedFile }),
     };
 
+    // 3. Create a new messages array for the API call *before* clearing state.
     const nextMessages = [...messages, userMsg];
+    
+    // 4. Update the UI immediately for a responsive feel.
     setMessages(nextMessages);
     setInput('');
     setAttachedFile(null);
     setLoading(true);
 
     try {
+      // 5. Use the 'nextMessages' local variable which definitely contains the file.
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: nextMessages })
+        body: JSON.stringify({ model, messages: nextMessages }) // Use the local variable
       });
+
+      // Handle a failed API request
+      if (!resp.ok) {
+        const errorData = await resp.json();
+        const errorMessage = errorData.error?.message || 'Error: failed to get response.';
+        setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
+        return; 
+      }
+
+      // Process the successful response
       const data = await resp.json();
       let assistantText = '';
       if (data?.choices && data.choices[0]) {
@@ -90,16 +106,16 @@ export default function Home() {
         assistantText = ch?.message?.content ?? ch?.text ?? JSON.stringify(ch);
       } else if (data?.message) {
         assistantText = data.message?.content ?? JSON.stringify(data.message);
-      } else if (resp.ok) {
-        assistantText = JSON.stringify(data);
       } else {
-        assistantText = data.error?.message || 'Error: failed to get response.';
+        assistantText = JSON.stringify(data);
       }
       setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
+
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error: failed to get response.' }]);
     } finally {
+      // 6. Stop the loading indicator regardless of success or failure.
       setLoading(false);
     }
   }
@@ -167,10 +183,11 @@ export default function Home() {
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !loading){ 
-                e.preventDefault(); // Add this line
-                send(); 
-              }
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !loading) {
+                  e.preventDefault(); // This is the fix for the Enter key
+                  send();
+                }
               }}
               placeholder="Type a message..."
             />
