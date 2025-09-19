@@ -11,17 +11,13 @@ export default async function handler(req, res) {
   // Create a deep copy to safely modify the messages array.
   let processedMessages = JSON.parse(JSON.stringify(messages));
 
-  // --- FIX: Loop through ALL messages to process files, not just the last one ---
+  // Loop through ALL messages to process files, not just the last one.
   for (let message of processedMessages) {
     if (message.role === 'user' && message.file) {
       const { content, file } = message;
 
-      // Basic validation for the file object
-      if (!file.data || !file.type || !file.name) {
-        return res.status(400).json({ error: 'Invalid file data in one of the messages.' });
-      }
-      if (!file.data.startsWith('data:')) {
-        return res.status(400).json({ error: 'Invalid file data format. Expected a data URL.' });
+      if (!file.data || !file.type || !file.name || !file.data.startsWith('data:')) {
+        return res.status(400).json({ error: 'Invalid file data found in one of the messages.' });
       }
 
       const base64Data = file.data.split(',')[1];
@@ -29,26 +25,16 @@ export default async function handler(req, res) {
 
       try {
         if (file.type.startsWith('image/')) {
-          // Format for image files
           updatedContent = [
             { type: 'text', text: content },
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: file.type,
-                data: base64Data,
-              },
-            },
+            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64Data } },
           ];
         } else {
-          // Format for text-based files
           const decodedText = Buffer.from(base64Data, 'base64').toString('utf-8');
           const fileContentBlock = `\n\n--- Start of Uploaded File: ${file.name} ---\n\n${decodedText}\n\n--- End of Uploaded File ---`;
           updatedContent = [{ type: 'text', text: `${content}${fileContentBlock}` }];
         }
         
-        // Replace the content of the current message and delete the temporary file object.
         message.content = updatedContent;
         delete message.file;
 
@@ -68,7 +54,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model,
-        messages: processedMessages // Send the fully processed message history
+        messages: processedMessages
       })
     });
 

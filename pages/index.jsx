@@ -2,129 +2,43 @@ import { useEffect, useState, useRef } from 'react';
 import { FileIcon, ImageIcon, MicIcon } from '../components/icons';
 import { FilePreview } from '../components/file-preview';
 import { ChatMessage } from '../components/ChatMessage';
+import { useChatHandler } from '../components/useChatHandler';
 
 export default function Home() {
   const [models, setModels] = useState([]);
-  const [model, setModel] = useState('');
   const [input, setInput] = useState('');
-  // Initialize with an empty array to prevent hydration errors.
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [attachedFile, setAttachedFile] = useState(null);
-  
   const fileInputRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  
+  // Use the custom hook for all chat logic
+  const {
+    model,
+    setModel,
+    messages,
+    loading,
+    attachedFile,
+    setAttachedFile,
+    messagesEndRef,
+    handleFileChange,
+    sendMessage,
+    clearChat,
+  } = useChatHandler(models[0]?.id);
 
   const currentModel = models.find(m => m.id === model);
   const modelCapabilities = currentModel?.capabilities || ['text'];
 
-  // This effect runs only once on the client-side after the initial render.
-  // This is the safe way to load data from localStorage.
-  useEffect(() => {
-    try {
-      const savedMessages = JSON.parse(localStorage.getItem('mm:messages')) || [];
-      setMessages(savedMessages);
-    } catch {
-      setMessages([]);
-    }
-  }, []);
-
   useEffect(() => {
     fetch('/api/models').then(r => r.json()).then(data => {
       setModels(data);
-      if (!model && data.length) setModel(data[0].id);
+      if (data.length && !model) {
+        setModel(data[0].id);
+      }
     });
-  }, []);
+  }, [model, setModel]);
 
-  useEffect(() => {
-    // Only save to localStorage if there are messages to prevent overwriting on initial load.
-    if (messages.length > 0) {
-      localStorage.setItem('mm:messages', JSON.stringify(messages));
-    } else {
-      // If messages are cleared, also remove from storage.
-      localStorage.removeItem('mm:messages');
-    }
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAttachedFile({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        data: reader.result,
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  async function send() {
-    // 1. Return early if there's nothing to send.
-    if (!input.trim() && !attachedFile) return;
-
-    // 2. Create the user message with the file data.
-    const userMsg = {
-      role: 'user',
-      content: input,
-      ...(attachedFile && { file: attachedFile }),
-    };
-
-    // 3. Create a new messages array for the API call *before* clearing state.
-    const nextMessages = [...messages, userMsg];
-    
-    // 4. Update the UI immediately for a responsive feel.
-    setMessages(nextMessages);
+  const handleSend = () => {
+    sendMessage(input);
     setInput('');
-    setAttachedFile(null);
-    setLoading(true);
-
-    try {
-      // 5. Use the 'nextMessages' local variable which definitely contains the file.
-      const resp = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: nextMessages }) // Use the local variable
-      });
-
-      // Handle a failed API request
-      if (!resp.ok) {
-        const errorData = await resp.json();
-        const errorMessage = errorData.error?.message || 'Error: failed to get response.';
-        setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
-        return; 
-      }
-
-      // Process the successful response
-      const data = await resp.json();
-      let assistantText = '';
-      if (data?.choices && data.choices[0]) {
-        const ch = data.choices[0];
-        assistantText = ch?.message?.content ?? ch?.text ?? JSON.stringify(ch);
-      } else if (data?.message) {
-        assistantText = data.message?.content ?? JSON.stringify(data.message);
-      } else {
-        assistantText = JSON.stringify(data);
-      }
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
-
-    } catch (err) {
-      console.error(err);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error: failed to get response.' }]);
-    } finally {
-      // 6. Stop the loading indicator regardless of success or failure.
-      setLoading(false);
-    }
-  }
-
-  function clearChat() {
-    setMessages([]);
-    setAttachedFile(null);
-    // The useEffect hook will handle removing the item from localStorage.
-  }
+  };
 
   return (
     <div className="container">
@@ -185,13 +99,13 @@ export default function Home() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter' && !loading) {
-                  e.preventDefault(); // This is the fix for the Enter key
-                  send();
+                  e.preventDefault();
+                  handleSend();
                 }
               }}
               placeholder="Type a message..."
             />
-            <button className="send-button" onClick={send} disabled={loading}>Send</button>
+            <button className="send-button" onClick={handleSend} disabled={loading}>Send</button>
           </div>
         </footer>
       </main>
