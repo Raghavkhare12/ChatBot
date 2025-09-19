@@ -1,13 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { FileIcon, ImageIcon, MicIcon } from '../components/icons';
-import { FilePreview } from '../components/file-preview';
 import { ChatMessage } from '../components/ChatMessage';
 import { useChatHandler } from '../components/useChatHandler';
 
 export default function Home() {
   const [models, setModels] = useState([]);
   const [input, setInput] = useState('');
-  const fileInputRef = useRef(null);
   
   // Use the custom hook for all chat logic
   const {
@@ -15,16 +12,12 @@ export default function Home() {
     setModel,
     messages,
     loading,
-    attachedFile,
-    setAttachedFile,
     messagesEndRef,
-    handleFileChange,
     sendMessage,
     clearChat,
   } = useChatHandler(models[0]?.id);
 
   const currentModel = models.find(m => m.id === model);
-  const modelCapabilities = currentModel?.capabilities || ['text'];
 
   useEffect(() => {
     fetch('/api/models').then(r => r.json()).then(data => {
@@ -50,7 +43,7 @@ export default function Home() {
             <li 
               key={m.id} 
               className={model === m.id ? 'active' : ''}
-              onClick={() => { setModel(m.id); setAttachedFile(null); }}
+              onClick={() => { setModel(m.id); }}
             >
               {m.name}
             </li>
@@ -79,20 +72,7 @@ export default function Home() {
         </div>
 
         <footer className="chat-footer">
-          {attachedFile && <FilePreview file={attachedFile} onClear={() => setAttachedFile(null)} />}
           <div className="input-area">
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
-            
-            {modelCapabilities.includes('image') && (
-              <button onClick={() => { fileInputRef.current.accept = 'image/*'; fileInputRef.current.click(); }}><ImageIcon /></button>
-            )}
-            {modelCapabilities.includes('audio') && (
-              <button onClick={() => { fileInputRef.current.accept = 'audio/*'; fileInputRef.current.click(); }}><MicIcon /></button>
-            )}
-            {modelCapabilities.includes('file') && (
-              <button onClick={() => { fileInputRef.current.accept = '*/*'; fileInputRef.current.click(); }}><FileIcon /></button>
-            )}
-            
             <input
               type="text"
               value={input}

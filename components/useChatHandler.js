@@ -4,7 +4,6 @@ export function useChatHandler(initialModel) {
   const [model, setModel] = useState(initialModel);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [attachedFile, setAttachedFile] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Load messages from localStorage on initial render
@@ -27,38 +26,18 @@ export function useChatHandler(initialModel) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAttachedFile({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        data: reader.result,
-      });
-    };
-    reader.readAsDataURL(file);
-    // Clear the input value to allow re-uploading the same file
-    event.target.value = null;
-  };
-
   const sendMessage = async (input) => {
-    if (!input.trim() && !attachedFile) return;
+    if (!input.trim()) return;
 
     setLoading(true);
 
     const userMsg = {
       role: 'user',
       content: input,
-      ...(attachedFile && { file: attachedFile }),
     };
 
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
-    setAttachedFile(null);
 
     try {
       const resp = await fetch('/api/chat', {
@@ -89,7 +68,6 @@ export function useChatHandler(initialModel) {
 
   const clearChat = () => {
     setMessages([]);
-    setAttachedFile(null);
   };
 
   return {
@@ -97,10 +75,7 @@ export function useChatHandler(initialModel) {
     setModel,
     messages,
     loading,
-    attachedFile,
-    setAttachedFile,
     messagesEndRef,
-    handleFileChange,
     sendMessage,
     clearChat,
   };
