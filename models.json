@@ -15,6 +15,11 @@
     "capabilities": ["text", "image", "audio", "file"]
   },
   {
+    "id": "google/gemini-1.5-flash",
+    "name": "Gemini 1.5 Flash (Multi-modal)",
+    "capabilities": ["text", "image", "audio", "file"]
+  },
+  {
     "id": "openai/gpt-5-nano",
     "name": "ChatGPT-5 Nano(All Rounder)",
     "capabilities": ["text", "image", "audio", "file"]
