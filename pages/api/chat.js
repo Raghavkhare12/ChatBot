@@ -4,33 +4,46 @@ export default async function handler(req, res) {
   const { model, messages } = req.body || {};
   if (!model || !messages) return res.status(400).json({ error: 'model and messages required' });
 
-  // Create a clean version of messages to modify
   let processedMessages = messages.map(msg => ({ role: msg.role, content: msg.content }));
 
   const lastMessage = messages[messages.length - 1];
   const { content, file } = lastMessage;
 
-  // Check if there is file data to process
   if (file && file.data && file.type) {
-    // Strip the metadata from the data URI (e.g., "data:image/png;base64,")
     const base64Data = file.data.split(',')[1];
-    
-    // Construct a more robust payload for multi-modal models.
-    // This format is well-understood by OpenRouter for services like Anthropic/Claude and adapted for others.
-    const updatedLastMessageContent = [
-      { type: 'text', text: content },
-      {
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: file.type, // Pass the correct media type (e.g., 'image/png')
-          data: base64Data,      // Pass only the raw base64 data
-        },
-      },
-    ];
+    let updatedContent = [];
 
-    // Replace the content of the last message with the new multi-modal structure
-    processedMessages[processedMessages.length - 1].content = updatedLastMessageContent;
+    // Check if the file is an image
+    if (file.type.startsWith('image/')) {
+      updatedContent = [
+        { type: 'text', text: content },
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: file.type,
+            data: base64Data,
+          },
+        },
+      ];
+    } else {
+      // Handle text-based files (like code)
+      const decodedText = Buffer.from(base64Data, 'base64').toString('utf-8');
+      const fileContentBlock = `
+--- Start of Uploaded File: ${file.name} ---
+
+${decodedText}
+
+--- End of Uploaded File ---
+      `;
+      
+      // Prepend the file content to the user's text prompt
+      updatedContent = [
+        { type: 'text', text: `${content}\n\n${fileContentBlock}` }
+      ];
+    }
+
+    processedMessages[processedMessages.length - 1].content = updatedContent;
   }
   
   try {
@@ -46,7 +59,6 @@ export default async function handler(req, res) {
       })
     });
 
-    // If the response is not OK, log the error for better debugging
     if (!resp.ok) {
         const errorData = await resp.json();
         console.error('OpenRouter API Error:', errorData);
