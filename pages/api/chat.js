@@ -4,30 +4,35 @@ export default async function handler(req, res) {
   const { model, messages } = req.body || {};
   if (!model || !messages) return res.status(400).json({ error: 'model and messages required' });
 
-  // The last message is the one with the potential multimodal content
+  // Create a clean version of messages to modify
+  let processedMessages = messages.map(msg => ({ role: msg.role, content: msg.content }));
+
   const lastMessage = messages[messages.length - 1];
   const { content, file } = lastMessage;
 
-  let processedMessages = [...messages];
-
-  if (file && file.data) {
-    // Reformat the last message to include the file content for multimodal models
-    const updatedLastMessage = {
-      role: 'user',
-      content: [
-        { type: 'text', text: content },
-        {
-          type: 'image_url', // This type is often used for various file types by providers
-          image_url: {
-            url: file.data, // base64 data URI
-          },
+  // Check if there is file data to process
+  if (file && file.data && file.type) {
+    // Strip the metadata from the data URI (e.g., "data:image/png;base64,")
+    const base64Data = file.data.split(',')[1];
+    
+    // Construct a more robust payload for multi-modal models.
+    // This format is well-understood by OpenRouter for services like Anthropic/Claude and adapted for others.
+    const updatedLastMessageContent = [
+      { type: 'text', text: content },
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: file.type, // Pass the correct media type (e.g., 'image/png')
+          data: base64Data,      // Pass only the raw base64 data
         },
-      ],
-    };
-    // Replace the last message with the new multimodal format
-    processedMessages = [...messages.slice(0, -1), updatedLastMessage];
-  }
+      },
+    ];
 
+    // Replace the content of the last message with the new multi-modal structure
+    processedMessages[processedMessages.length - 1].content = updatedLastMessageContent;
+  }
+  
   try {
     const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -37,9 +42,16 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model,
-        messages: processedMessages // Send the potentially modified messages array
+        messages: processedMessages
       })
     });
+
+    // If the response is not OK, log the error for better debugging
+    if (!resp.ok) {
+        const errorData = await resp.json();
+        console.error('OpenRouter API Error:', errorData);
+        return res.status(resp.status).json(errorData);
+    }
 
     const data = await resp.json();
     return res.status(resp.status).json(data);
