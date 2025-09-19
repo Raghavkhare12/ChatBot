@@ -7,11 +7,8 @@ export default function Home() {
   const [models, setModels] = useState([]);
   const [model, setModel] = useState('');
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('mm:messages')) || [];
-    } catch { return []; }
-  });
+  // Initialize with an empty array to prevent hydration errors.
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
   
@@ -21,6 +18,17 @@ export default function Home() {
   const currentModel = models.find(m => m.id === model);
   const modelCapabilities = currentModel?.capabilities || ['text'];
 
+  // This effect runs only once on the client-side after the initial render.
+  // This is the safe way to load data from localStorage.
+  useEffect(() => {
+    try {
+      const savedMessages = JSON.parse(localStorage.getItem('mm:messages')) || [];
+      setMessages(savedMessages);
+    } catch {
+      setMessages([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetch('/api/models').then(r => r.json()).then(data => {
       setModels(data);
@@ -29,7 +37,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('mm:messages', JSON.stringify(messages));
+    // Only save to localStorage if there are messages to prevent overwriting on initial load.
+    if (messages.length > 0) {
+      localStorage.setItem('mm:messages', JSON.stringify(messages));
+    } else {
+      // If messages are cleared, also remove from storage.
+      localStorage.removeItem('mm:messages');
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -76,8 +90,10 @@ export default function Home() {
         assistantText = ch?.message?.content ?? ch?.text ?? JSON.stringify(ch);
       } else if (data?.message) {
         assistantText = data.message?.content ?? JSON.stringify(data.message);
-      } else {
+      } else if (resp.ok) {
         assistantText = JSON.stringify(data);
+      } else {
+        assistantText = data.error?.message || 'Error: failed to get response.';
       }
       setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
     } catch (err) {
@@ -91,7 +107,7 @@ export default function Home() {
   function clearChat() {
     setMessages([]);
     setAttachedFile(null);
-    localStorage.removeItem('mm:messages');
+    // The useEffect hook will handle removing the item from localStorage.
   }
 
   return (
