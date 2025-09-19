@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const { model, messages } = req.body || {};
   if (!model || !messages) return res.status(400).json({ error: 'model and messages required' });
 
-  // Use the messages directly, but create a deep copy to avoid mutation issues.
+  // Create a deep copy to safely modify the messages array.
   let processedMessages = JSON.parse(JSON.stringify(messages));
 
   const lastMessage = processedMessages[processedMessages.length - 1];
@@ -29,19 +29,13 @@ export default async function handler(req, res) {
         },
       ];
     } else {
-      // Format for text-based files (like code)
+      // Format for text-based files
       const decodedText = Buffer.from(base64Data, 'base64').toString('utf-8');
-      const fileContentBlock = `
---- Start of Uploaded File: ${file.name} ---
-
-${decodedText}
-
---- End of Uploaded File ---
-      `;
-      updatedContent = [{ type: 'text', text: `${content}\n\n${fileContentBlock}` }];
+      const fileContentBlock = `\n\n--- Start of Uploaded File: ${file.name} ---\n\n${decodedText}\n\n--- End of Uploaded File ---`;
+      updatedContent = [{ type: 'text', text: `${content}${fileContentBlock}` }];
     }
     
-    // Replace the content of the last message and remove the file object
+    // Replace the content of the last message and delete the temporary file object.
     lastMessage.content = updatedContent;
     delete lastMessage.file;
   }
@@ -55,8 +49,8 @@ ${decodedText}
       },
       body: JSON.stringify({
         model,
-        // Filter out any remaining file objects just in case, before sending.
-        messages: processedMessages.map(({ file, ...rest }) => rest)
+        // Send the fully processed messages array directly.
+        messages: processedMessages
       })
     });
 
