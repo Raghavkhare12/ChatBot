@@ -16,7 +16,7 @@ A clean, minimal Next.js web application that lets you chat with multiple large 
 
 ## 🌐 Live Website
 
-👉 [Visit ChatBot here](https://chat-bot-git-main-raghavkhare12s-projects.vercel.app/)  
+👉 [Visit ChatBot here](https://chat-bot-orcin-pi.vercel.app/)  
 
 ---
 
