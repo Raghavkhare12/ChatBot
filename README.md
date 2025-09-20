@@ -1,72 +1,107 @@
-# 🤖 Multi-Model Chatbot Web App
+# ChatBot
 
-A clean, minimal **Next.js** web application that lets you chat with multiple LLMs.  
-Switch between models (via [OpenRouter](https://openrouter.ai/)) in real time, compare responses, and deploy easily.
+A clean, minimal Next.js web application that lets you chat with multiple large language models (LLMs). Switch between models in real-time, compare responses, and deploy easily.
 
 ---
 
 ## ✨ Features
-- Simple, **user-friendly chat UI** with message bubbles
-- **Model selector** to switch between multiple LLMs
-- **Serverless backend proxy** to OpenRouter (your API key is never exposed to the browser)
-- Chat history stored in browser `localStorage`
-- Easy to deploy on **Vercel** with 1-click
+
+- Simple, user-friendly chat UI with message bubbles  
+- Ability to select / switch between multiple models via [OpenRouter](https://openrouter.ai)  
+- Serverless backend proxy so your API key is never exposed to the browser  
+- Chat history stored in browser `localStorage`  
+- Simple to deploy  
 
 ---
 
-## 🛠 Tech Stack
-- [Next.js](https://nextjs.org/) (React framework)
-- [OpenRouter API](https://openrouter.ai/) for multi-model access
-- Deployed on [Vercel](https://vercel.com/)
+## 🌐 Live Website
+
+👉 [Visit ChatBot here](https://chat-bot-git-main-raghavkhare12s-projects.vercel.app/)  
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend / Fullstack framework**: Next.js (React)  
+- **API Services**: OpenRouter API for accessing multiple LLMs  
+- **State / Storage**: localStorage for persisting chat history on client  
 
 ---
 
 ## 🚀 Quick Start (Local Development)
 
-1. **Clone this repository**  
+1. Clone the repository  
    ```bash
-   git clone https://github.com/YOUR-USERNAME/multimodel-chatbot.git
-   cd multimodel-chatbot
-   ```
+   git clone https://github.com/Raghavkhare12/ChatBot.git
+   cd ChatBot
+````
 
-2. **Install dependencies**  
+2. Install dependencies
+
    ```bash
    npm install
    ```
 
-3. **Set up environment variables**  
-   Create a `.env.local` file in the root:
-   ```bash
-   OPENROUTER_API_KEY=sk-xxxxxx
-   ```
+3. Setup environment variables
 
-   👉 Get your free API key from [OpenRouter](https://openrouter.ai/keys).
+   * Copy `.env.local.example` to `.env.local`
+   * Add your OpenRouter API key:
 
-4. **Run locally**  
+     ```bash
+     OPENROUTER_API_KEY=sk-yourapikey
+     ```
+
+4. Run locally
+
    ```bash
    npm run dev
    ```
-   Visit: [http://localhost:3000](http://localhost:3000)
+
+5. Visit in browser: `http://localhost:3000`
 
 ---
 
-## ☁️ Deployment
+## 📁 Project Structure
 
-This project is optimized for **Vercel**.
+Here’s a rough overview of the folders/files:
 
-### Deploy in one click:
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR-USERNAME/multimodel-chatbot&env=OPENROUTER_API_KEY&project-name=multi-model-chatbot&repository-name=multimodel-chatbot)
-
-After deployment, add your `OPENROUTER_API_KEY` in Vercel’s **Project Settings → Environment Variables**.
-
----
-
-## 📂 Repo & Demo Links
-
-- **GitHub Repo**: [🔗 YOUR REPO LINK HERE](https://github.com/YOUR-USERNAME/multimodel-chatbot)  
-- **Live Demo**: [🌐 YOUR DEPLOYED LINK HERE](https://YOUR-PROJECT.vercel.app)  
+```
+/components     → React components (UI, chat bubbles, model selector, etc.)
+/pages          → Next.js pages (chat interface, etc.)
+/styles         → CSS / styling files
+.env.local.example → Example environment variables file
+models.json     → Configuration / info about the LLM models supported
+next.config.js  → Next.js configuration
+package.json    → dependencies, scripts, etc.
+```
 
 ---
 
-## 📜 License
-MIT License © 2025
+## 🔐 Security & Secrets
+
+* Your `OPENROUTER_API_KEY` should **never** be committed to the repo.
+* Use `.env.local` (ignored by Git) to store secrets.
+
+---
+
+## 🧪 Future Improvements / To-Do
+
+* Add user authentication so different users can maintain separate histories
+* Persist chat history on a backend (database), not only localStorage
+* UI themes (dark / light mode)
+* More model options, maybe configurable by user
+* Improved error handling / retry logic
+
+---
+
+
+## ℹ️ About
+
+* Author: Raghav Khare
+* Source Code: [https://github.com/Raghavkhare12/ChatBot](https://github.com/Raghavkhare12/ChatBot)
+
+```
+
+---
+
+```
