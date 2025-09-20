@@ -60,14 +60,6 @@ export default async function handler(req, res) {
   }
   
   try {
-    const apiRequestBody = {
-      model,
-      messages: processedMessages // Send the fully processed message history
-    };
-
-    // --- ADD THIS LINE ---
-    console.log('Sending to OpenRouter:', JSON.stringify(apiRequestBody, null, 2));
-
     const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,7 +74,6 @@ export default async function handler(req, res) {
 
     if (!resp.ok) {
         const errorData = await resp.json().catch(() => ({ error: { message: 'Failed to parse error response from API.' } }));
-         console.error('Detailed OpenRouter API Error:', JSON.stringify(errorData, null, 2));
         console.error('OpenRouter API Error:', errorData);
         return res.status(resp.status).json(errorData);
     }
