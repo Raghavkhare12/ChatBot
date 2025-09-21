@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { FileIcon, ImageIcon, MicIcon } from '../components/icons';
+import { FileIcon, ImageIcon, MicIcon, WeatherIcon, TimeIcon } from '../components/icons';
 import { FilePreview } from '../components/file-preview';
 import { ChatMessage } from '../components/ChatMessage';
 
@@ -7,7 +7,6 @@ export default function Home() {
   const [models, setModels] = useState([]);
   const [model, setModel] = useState('');
   const [input, setInput] = useState('');
-  // Initialize with an empty array to prevent hydration errors.
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
@@ -18,8 +17,6 @@ export default function Home() {
   const currentModel = models.find(m => m.id === model);
   const modelCapabilities = currentModel?.capabilities || ['text'];
 
-  // This effect runs only once on the client-side after the initial render.
-  // This is the safe way to load data from localStorage.
   useEffect(() => {
     try {
       const savedMessages = JSON.parse(localStorage.getItem('mm:messages')) || [];
@@ -37,11 +34,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Only save to localStorage if there are messages to prevent overwriting on initial load.
     if (messages.length > 0) {
       localStorage.setItem('mm:messages', JSON.stringify(messages));
     } else {
-      // If messages are cleared, also remove from storage.
       localStorage.removeItem('mm:messages');
     }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,43 +57,91 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  async function send() {
-    // 1. Return early if there's nothing to send.
-    if (!input.trim() && !attachedFile) return;
+  const handleUtilityButtonClick = (toolName) => {
+    setLoading(true);
 
-    // 2. Create the user message with the file data.
-    const userMsg = {
-      role: 'user',
-      content: input,
-      ...(attachedFile && { file: attachedFile }),
-    };
+    if (toolName === 'getDateTime') {
+      const userMsg = {
+        role: 'user',
+        content: 'What is the current date and time?',
+        isUtility: true,
+        toolName,
+      };
+      const nextMessages = [...messages, userMsg];
+      setMessages(nextMessages);
+      send(nextMessages);
+      return;
+    }
 
-    // 3. Create a new messages array for the API call *before* clearing state.
-    const nextMessages = [...messages, userMsg];
+    if (toolName === 'getCurrentWeather') {
+      if (!navigator.geolocation) {
+        setMessages(prev => [...prev, { role: 'assistant', content: "Geolocation is not supported by your browser." }]);
+        setLoading(false);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const userMsg = {
+            role: 'user',
+            content: "What's the weather like right now?",
+            isUtility: true,
+            toolName,
+            toolInput: { latitude, longitude }
+          };
+          const nextMessages = [...messages, userMsg];
+          setMessages(nextMessages);
+          send(nextMessages);
+        },
+        () => {
+          setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I couldn't get your location. Please enable location services." }]);
+          setLoading(false);
+        }
+      );
+    }
+  };
+
+  async function send(messagesToSend = null) {
+    const currentMessages = messagesToSend || messages;
+
+    if (!input.trim() && !attachedFile && !messagesToSend) return;
+
+    let nextMessages;
+
+    if (!messagesToSend) {
+      const userMsg = {
+        role: 'user',
+        content: input,
+        ...(attachedFile && { file: attachedFile }),
+      };
+      nextMessages = [...currentMessages, userMsg];
+      setMessages(nextMessages);
+      setInput('');
+      setAttachedFile(null);
+    } else {
+      nextMessages = currentMessages;
+    }
     
-    // 4. Update the UI immediately for a responsive feel.
-    setMessages(nextMessages);
-    setInput('');
-    setAttachedFile(null);
     setLoading(true);
 
     try {
-      // 5. Use the 'nextMessages' local variable which definitely contains the file.
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: nextMessages }) // Use the local variable
+        body: JSON.stringify({ model, messages: nextMessages })
       });
 
-      // Handle a failed API request
       if (!resp.ok) {
         const errorData = await resp.json();
         const errorMessage = errorData.error?.message || 'Error: failed to get response.';
-        setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
-        return; 
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.content !== errorMessage) {
+            setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
+        }
+        return;
       }
 
-      // Process the successful response
       const data = await resp.json();
       let assistantText = '';
       if (data?.choices && data.choices[0]) {
@@ -109,13 +152,17 @@ export default function Home() {
       } else {
         assistantText = JSON.stringify(data);
       }
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
+
+      setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages.push({ role: 'assistant', content: assistantText });
+          return newMessages;
+      });
 
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error: failed to get response.' }]);
     } finally {
-      // 6. Stop the loading indicator regardless of success or failure.
       setLoading(false);
     }
   }
@@ -123,12 +170,10 @@ export default function Home() {
   function clearChat() {
     setMessages([]);
     setAttachedFile(null);
-    // The useEffect hook will handle removing the item from localStorage.
   }
 
   return (
     <div className="container">
-      {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">Multi-Model Chat</div>
         <ul className="model-list">
@@ -147,7 +192,6 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Main Chat Panel */}
       <main className="chat-panel">
         <header className="chat-header">
           {currentModel?.name || 'Select a model'}
@@ -167,6 +211,11 @@ export default function Home() {
         <footer className="chat-footer">
           {attachedFile && <FilePreview file={attachedFile} onClear={() => setAttachedFile(null)} />}
           <div className="input-area">
+            {/* START: CONFIRMED ICONS */}
+            <button onClick={() => handleUtilityButtonClick('getCurrentWeather')} title="Get Current Weather"><WeatherIcon /></button>
+            <button onClick={() => handleUtilityButtonClick('getDateTime')} title="Get Date & Time"><TimeIcon /></button>
+            {/* END: CONFIRMED ICONS */}
+            
             <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
             
             {modelCapabilities.includes('image') && (
@@ -185,13 +234,13 @@ export default function Home() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter' && !loading) {
-                  e.preventDefault(); // This is the fix for the Enter key
+                  e.preventDefault();
                   send();
                 }
               }}
               placeholder="Type a message..."
             />
-            <button className="send-button" onClick={send} disabled={loading}>Send</button>
+            <button className="send-button" onClick={() => send()} disabled={loading}>Send</button>
           </div>
         </footer>
       </main>

@@ -1,25 +1,20 @@
 export function ChatMessage({ message }) {
   const isUser = message.role === 'user';
-  const bubbleStyles = {
-    background: isUser ? '#4b9fff' : '#333333',
-    alignSelf: isUser ? 'flex-end' : 'flex-start',
-    color: 'white',
-    padding: '12px 16px',
-    borderRadius: '18px',
-    maxWidth: '75%',
-    marginBottom: '12px',
-    whiteSpace: 'pre-wrap',
-    wordWrap: 'break-word',
-  };
-
+  
+  // This style remains to handle the left/right alignment of the message.
   const containerStyles = {
     display: 'flex',
     justifyContent: isUser ? 'flex-end' : 'flex-start',
   };
 
+  // We create a dynamic className string.
+  // It will be "bubble user" for user messages and "bubble assistant" for assistant messages.
+  const bubbleClassName = `bubble ${isUser ? 'user' : 'assistant'}`;
+
   return (
     <div style={containerStyles}>
-      <div style={bubbleStyles}>
+      {/* The className attribute applies the styles from your globals.css file */}
+      <div className={bubbleClassName}>
         {message.content}
       </div>
     </div>

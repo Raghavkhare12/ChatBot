@@ -1,7 +1,7 @@
 [
   {
     "id": "deepseek/deepseek-chat-v3.1:free",
-    "name": "DeepSeek V3.1 (Deep Research) ",
+    "name": "DeepSeek V3.1 (Deep Research)(BEST) ",
     "capabilities": ["text", "image", "audio", "file"]
   },
   {

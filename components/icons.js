@@ -27,3 +27,21 @@ export const XIcon = () => (
     <line x1="6" y1="6" x2="18" y2="18"></line>
   </svg>
 );
+// components/icons.js
+
+// ... (keep existing icons: ImageIcon, MicIcon, FileIcon, XIcon)
+
+export const WeatherIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7.5 18a4.5 4.5 0 0 1 0-9 5 4.5 0 0 1 8.5-2h1a3.5 3.5 0 0 1 3.5 3.5 3 3 0 0 1 2 3 4.5 4.5 0 0 1-4.5 4.5h-10.5"/>
+        <path d="M12 1v2"/>
+        <path d="m15.5 3.5-1 1"/>
+        <path d="m8.5 3.5 1 1"/>
+    </svg>
+);
+export const TimeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <polyline points="12 6 12 12 16 14"></polyline>
+  </svg>
+);
