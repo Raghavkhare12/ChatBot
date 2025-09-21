@@ -1,4 +1,4 @@
-````markdown
+
 # ChatBot
 
 A clean, minimal **Next.js** web application that lets you chat with multiple large language models (LLMs).  
