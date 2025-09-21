@@ -15,7 +15,11 @@ Switch between models in real-time, compare responses, and deploy easily.
   - Current date and time  
 
 📸 Example:  
-![ChatBot Screenshot](./Screenshot.png)
+![ChatBot Screenshot](./Screenshot1.png)
+
+![ChatBot Screenshot](./Screenshot2.png)
+
+![ChatBot Screenshot](./Screenshot3.png)
 
 - 🔐 Serverless backend proxy so your API keys are never exposed to the browser  
 - 💾 Chat history stored in your browser's **localStorage**  
