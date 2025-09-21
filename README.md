@@ -20,7 +20,7 @@ Switch between models in real-time, compare responses, and deploy easily.
 ---
 
 ## 🌐 Live Website
-👉 [Visit ChatBot here](https://chat-bot-git-main-raghavkhare12s-projects.vercel.app/)
+👉 [Visit ChatBot here](https://chat-bot-orcin-pi.vercel.app/)
 
 ---
 
