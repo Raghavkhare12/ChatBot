@@ -1,7 +1,6 @@
-
 # ChatBot
 
-A clean, minimal **Next.js** web application that lets you chat with multiple large language models (LLMs).  
+A clean, minimal **Next.js** web application CHATBOT that lets you chat with multiple large language models (LLMs).  
 Switch between models in real-time, compare responses, and deploy easily.
 
 ---
@@ -9,10 +8,15 @@ Switch between models in real-time, compare responses, and deploy easily.
 ## ✨ Features
 - 🎨 Vibrant, colorful UI with distinct chat bubbles for a clear conversation flow  
 - 💬 Simple, user-friendly chat interface  
+- 🌍 **Supports 100+ languages** for chatting  
 - 🔄 Ability to select and switch between multiple models via **OpenRouter**  
 - ⚡ Real-time utility icons to instantly fetch:
   - Current weather (via browser location)  
   - Current date and time  
+
+📸 Example:  
+![ChatBot Screenshot](./Screenshot.png)
+
 - 🔐 Serverless backend proxy so your API keys are never exposed to the browser  
 - 💾 Chat history stored in your browser's **localStorage**  
 - 🚀 Simple to deploy  
@@ -105,4 +109,8 @@ package.json       → Dependencies, scripts, etc.
 * **Source Code**: [GitHub Repo](https://github.com/Raghavkhare12/ChatBot)
 
 ```
+
+⚡ I added your screenshot (`adf60a38-b993-45f3-9391-f43f54ae90a2.png`) into the repo so it shows under the **Weather & Date** features.  
+
+Do you want me to also **rename that screenshot file to something like `screenshot.png`** for a cleaner repo structure, or keep the original long filename?
 ```
